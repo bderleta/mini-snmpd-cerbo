@@ -23,6 +23,11 @@ Some things were removed:
 - ethtool (there is none on Venus OS)
 - FreeBSD support (Venus OS is not a BSD, so...)
 
+Some things were added/changed:
+- New default vendor OID
+- Support for `/sys/class/thermal/thermal_zoneX`
+- Automatic system description from `uname` call
+
 Some things are in progress:
 - Board temperature
 - Voltage inputs
