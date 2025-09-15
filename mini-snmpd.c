@@ -335,14 +335,9 @@ static char *progname(char *arg0)
 int main(int argc, char *argv[])
 {
 	static const char short_options[] = "ac:C:d:D:hi:l:L:np:P:st:u:vV:"
-#ifndef __FreeBSD__
 		"I:"
-#endif
 #ifdef CONFIG_ENABLE_IPV6
 		"46"
-#endif
-#ifdef HAVE_LIBCONFUSE
-		"f:"
 #endif
 		;
 	static const struct option long_options[] = {
@@ -355,14 +350,9 @@ int main(int argc, char *argv[])
 		{ "contact",     1, 0, 'C' },
 		{ "disks",       1, 0, 'd' },
 		{ "description", 1, 0, 'D' },
-#ifdef HAVE_LIBCONFUSE
-		{ "file",        1, 0, 'f' },
-#endif
 		{ "help",        0, 0, 'h' },
 		{ "interfaces",  1, 0, 'i' },
-#ifndef __FreeBSD__
 		{ "listen",      1, 0, 'I' },
-#endif
 		{ "loglevel",    1, 0, 'l' },
 		{ "location",    1, 0, 'L' },
 		{ "foreground",  0, 0, 'n' },
@@ -379,9 +369,7 @@ int main(int argc, char *argv[])
 	size_t i;
 	fd_set rfds, wfds;
 	struct sigaction sig;
-#ifndef __FreeBSD__
 	struct ifreq ifreq;
-#endif
 	struct timeval tv_last;
 	struct timeval tv_now;
 	struct timeval tv_sleep;
@@ -392,10 +380,6 @@ int main(int argc, char *argv[])
 		struct sockaddr_in6 sa6;
 #endif
 	} sockaddr;
-#ifdef HAVE_LIBCONFUSE
-	char path[256] = "";
-	char *config = NULL;
-#endif
 
 	g_prognm = progname(argv[0]);
 
@@ -434,22 +418,15 @@ int main(int argc, char *argv[])
 		case 'D':
 			g_description = optarg;
 			break;
-#ifdef HAVE_LIBCONFUSE
-		case 'f':
-			config = optarg;
-			break;
-#endif
 		case 'h':
 			return usage(0);
 
 		case 'i':
 			g_interface_list_length = split(optarg, ",;", g_interface_list, MAX_NR_INTERFACES);
 			break;
-#ifndef __FreeBSD__
 		case 'I':
 			g_bind_to_device = strdup(optarg);
 			break;
-#endif
 		case 'l':
 			if (log_level(optarg))
 				return usage(1);
@@ -508,19 +485,6 @@ int main(int argc, char *argv[])
 			return 1;
 		}
 	}
-
-#ifdef HAVE_LIBCONFUSE
-	if (!config) {
-		snprintf(path, sizeof(path), "%s/%s.conf", SYSCONFDIR, PACKAGE_NAME);
-		config = path;
-	} else if (access(config, F_OK)) {
-		logit(LOG_ERR, errno, "Failed reading config file '%s'", config);
-		return 1;
-	}
-
-	if (read_config(config))
-		return 1;
-#endif
 
 	if (!g_community)
 		g_community = "public";
@@ -587,7 +551,6 @@ int main(int argc, char *argv[])
 		exit(EXIT_SYSCALL);
 	}
 
-#ifndef __FreeBSD__
 	if (g_bind_to_device) {
 		snprintf(ifreq.ifr_ifrn.ifrn_name, sizeof(ifreq.ifr_ifrn.ifrn_name), "%s", g_bind_to_device);
 		if (setsockopt(g_udp_sockfd, SOL_SOCKET, SO_BINDTODEVICE, (char *)&ifreq, sizeof(ifreq)) == -1) {
@@ -595,7 +558,6 @@ int main(int argc, char *argv[])
 			exit(EXIT_SYSCALL);
 		}
 	}
-#endif
 
 	/* Open the server's TCP port and prepare it for listening */
 	g_tcp_sockfd = socket((g_family == AF_INET) ? PF_INET : PF_INET6, SOCK_STREAM, 0);
@@ -604,7 +566,6 @@ int main(int argc, char *argv[])
 		exit(EXIT_SYSCALL);
 	}
 
-#ifndef __FreeBSD__
 	if (g_bind_to_device) {
 		snprintf(ifreq.ifr_ifrn.ifrn_name, sizeof(ifreq.ifr_ifrn.ifrn_name), "%s", g_bind_to_device);
 		if (setsockopt(g_tcp_sockfd, SOL_SOCKET, SO_BINDTODEVICE, (char *)&ifreq, sizeof(ifreq)) == -1) {
@@ -612,7 +573,6 @@ int main(int argc, char *argv[])
 			exit(EXIT_SYSCALL);
 		}
 	}
-#endif
 
 	c = 1;
 	if (setsockopt(g_tcp_sockfd, SOL_SOCKET, SO_REUSEADDR, &c, sizeof(c)) == -1) {
@@ -735,7 +695,7 @@ int main(int argc, char *argv[])
 			tv_sleep.tv_usec = ((g_timeout - ticks) % 100) * 10000;
 		}
 
-#ifdef DEBUG
+#ifdef DEBUG 
 		dump_mib(g_mib, g_mib_length);
 #endif
 

@@ -25,7 +25,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include "compat.h"
-
+ 
 /*
  * Project dependent defines
  */
@@ -268,14 +268,6 @@ typedef struct udpinfo_s {
 	long long udpOutDatagrams;
 } udpinfo_t;
 
-#ifdef CONFIG_ENABLE_DEMO
-typedef struct demoinfo_s {
-	unsigned int random_value_1;
-	unsigned int random_value_2;
-} demoinfo_t;
-#endif
-
-
 /*
  * Global variables
  */
@@ -360,9 +352,6 @@ void         get_tcpinfo        (tcpinfo_t *tcpinfo);
 void         get_udpinfo        (udpinfo_t *udpinfo);
 void         get_diskinfo       (diskinfo_t *diskinfo);
 void         get_netinfo        (netinfo_t *netinfo);
-#ifdef CONFIG_ENABLE_DEMO
-void         get_demoinfo       (demoinfo_t *demoinfo);
-#endif
 int          logit              (int priority, int syserr, const char *fmt, ...);
 
 int snmp_packet_complete   (const client_t *client);
@@ -375,11 +364,7 @@ int mib_update   (int full);
 value_t *mib_find     (const oid_t *oid, size_t *pos);
 value_t *mib_findnext (const oid_t *oid);
 
-#ifdef CONFIG_ENABLE_ETHTOOL
-int ethtool_gstats(int intf, netinfo_t *netinfo, field_t *field);
-#else
 #define ethtool_gstats(intf, netinfo, field) (-1)
-#endif
 
 #endif /* MINI_SNMPD_H_ */
 

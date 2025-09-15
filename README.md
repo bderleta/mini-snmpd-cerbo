@@ -1,20 +1,27 @@
-Mini SNMP Daemon
+Mini SNMP Daemon - Cerbo version
 ================
-[![License Badge][]][License] [![Travis Status][]][Travis] [![Coverity Status][]][Coverity Scan]
-
-> The [latest release][releases] is always available from GitHub.
-> Download only versioned tarballs, `mini-snmpd-X.Y.tar.gz`.  See
-> below for instructions on how to build.
 
 Table of Contents
 -----------------
 
+* [Cerbo version](#cerbo)
 * [Introduction](#introduction)
 * [Examples](#examples)
 * [Build & Install](#build--install)
 * [Building from GIT](#building-from-git)
 * [Origin & References](#origin--references)
 
+Cerbo version
+-------------
+
+This is stripped down version of [troglobit mini-snmpd](https://github.com/troglobit/mini-snmpd).
+Features not supported by Victron Cerbo GX, and by Venus OS in general, have been removed to save some space and simplify code.
+
+Some things are in progress:
+- Board temperature
+- Voltage inputs
+- CPU details
+- Relay states
 
 Introduction
 ------------
