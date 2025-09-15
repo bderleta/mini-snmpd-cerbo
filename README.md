@@ -17,6 +17,12 @@ Cerbo version
 This is stripped down version of [troglobit mini-snmpd](https://github.com/troglobit/mini-snmpd).
 Features not supported by Victron Cerbo GX, and by Venus OS in general, have been removed to save some space and simplify code.
 
+Some things were removed:
+- Demo mode
+- Configuration file support
+- ethtool (there is none on Venus OS)
+- FreeBSD support (Venus OS is not a BSD, so...)
+
 Some things are in progress:
 - Board temperature
 - Voltage inputs
@@ -45,7 +51,7 @@ Supported features:
 * Does not need a configuration file, but one is supported
 * Supports UDP and TCP (thus supports SSH tunneling of SNMP connections)
 * Supports Linux kernel versions 2.4, 2.6, and later
-* Supports FreeBSD (needs procfs mounted using "mount_linprocfs procfs /proc")
+* ~~Supports FreeBSD (needs procfs mounted using "mount_linprocfs procfs /proc")~~
 
 `mini-snmpd` has been tested on x86 and ARM platforms in Ubuntu Linux,
 Alpine Linux, and FreeBSD, using net-snmp and SnmpB as clients.  Big
