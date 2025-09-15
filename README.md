@@ -29,7 +29,7 @@ Some things were added/changed:
 - Automatic system description from `uname` call
 
 Some things are in progress:
-- Board temperature
+- Board temperature from `/sys/class/hwmon/hwmonX`
 - Voltage inputs
 - CPU details
 - Relay states
