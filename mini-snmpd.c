@@ -36,6 +36,7 @@
 #include <time.h>
 #include <pwd.h>
 #include <grp.h>
+#include <sys/utsname.h>
 
 #include "mini-snmpd.h"
 
@@ -51,7 +52,7 @@ static int usage(int rc)
 	       "  -c, --community STR    Community string, default: public\n"
 	       "  -C, --contact STR      System contact, default: none\n"
 	       "  -d, --disks PATH       Disks to monitor, default: /\n"
-	       "  -D, --description STR  System description, default: none\n"
+	       "  -D, --description STR  System description, default: `uname -a`\n"
 #ifdef HAVE_LIBCONFUSE
 	       "  -f, --file FILE        Configuration file. Default: " SYSCONFDIR "/%s.conf\n"
 #endif
@@ -490,8 +491,15 @@ int main(int argc, char *argv[])
 		g_community = "public";
 	if (!g_vendor)
 		g_vendor = VENDOR;
-	if (!g_description)
-		g_description = "";
+	if (!g_description) {
+		struct utsname buf;
+		if (uname(&buf) == 0) {
+			snprintf(g_uname, LINE_MAX, "%s %s %s %s %s", buf.sysname, buf.nodename, buf.release, buf.version, buf.machine);
+			g_description = g_uname;
+		} else {
+			g_description = "";
+		}
+	}
 	if (!g_location)
 		g_location = "";
 	if (!g_contact)

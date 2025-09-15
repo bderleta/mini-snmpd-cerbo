@@ -24,6 +24,7 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <limits.h>
 #include "compat.h"
  
 /*
@@ -40,6 +41,7 @@
 #define MAX_NR_DISKS                                    4
 #define MAX_NR_INTERFACES                               8
 #define MAX_NR_VALUES                                   2048
+#define MAX_NR_TEMPSENSORS								16
 
 #define MAX_PACKET_SIZE                                 2048
 #define MAX_STRING_SIZE                                 64
@@ -237,6 +239,11 @@ typedef struct netinfo_s {
 	char mac_addr[MAX_NR_INTERFACES][6];
 } netinfo_t;
 
+typedef struct tempsensorinfo_s {
+	unsigned int index[MAX_NR_TEMPSENSORS];
+	long long value[MAX_NR_TEMPSENSORS];
+	char device[MAX_NR_TEMPSENSORS][LINE_MAX];
+} tempsensorinfo_t;
  
 typedef struct ipinfo_s {
 	long long ipForwarding;
@@ -282,6 +289,8 @@ extern int       g_syslog;
 extern int       g_level;
 extern volatile sig_atomic_t g_quit;
 
+extern char		 g_uname[LINE_MAX];
+
 extern char     *g_prognm;
 extern char     *g_community;
 extern char     *g_description;
@@ -296,6 +305,8 @@ extern size_t    g_disk_list_length;
 
 extern char     *g_interface_list[MAX_NR_INTERFACES];
 extern size_t    g_interface_list_length;
+
+extern size_t 	 g_tempsensor_list_length;
 
 extern in_port_t g_udp_port;
 extern in_port_t g_tcp_port;
@@ -313,6 +324,9 @@ extern size_t    g_mib_length;
 /*
  * Functions
  */
+
+char* 		 rtrim(char* s);
+char* 		 strncpy_t(char* out, size_t outsz, const char* in, size_t insz);
 
 void         dump_packet   (const client_t   *client);
 void         dump_mib      (const value_t    *value, int size);
@@ -352,6 +366,7 @@ void         get_tcpinfo        (tcpinfo_t *tcpinfo);
 void         get_udpinfo        (udpinfo_t *udpinfo);
 void         get_diskinfo       (diskinfo_t *diskinfo);
 void         get_netinfo        (netinfo_t *netinfo);
+void		 get_tempsensorinfo (tempsensorinfo_t *tempsensorinfo);
 int          logit              (int priority, int syserr, const char *fmt, ...);
 
 int snmp_packet_complete   (const client_t *client);

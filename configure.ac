@@ -6,7 +6,7 @@ AM_SILENT_RULES([yes])
 
 AC_CONFIG_SRCDIR([mini-snmpd.c])
 AC_CONFIG_HEADER([config.h])
-AC_CONFIG_FILES([Makefile mini-snmpd.service])
+AC_CONFIG_FILES([Makefile])
 
 AC_PROG_CC
 AC_PROG_INSTALL
@@ -30,7 +30,7 @@ AC_CHECK_FUNCS(strstr strtod strtoul strtok getopt)
 ### Check for configured features #############################################################
 AC_ARG_WITH(vendor,
         AS_HELP_STRING([--with-vendor=OID], [Set a different vendor OID, default: .1.3.6.1.4.1]),
-	[vendor="$withval"], [vendor=".1.3.6.1.4.1"])
+	[vendor="$withval"], [vendor=".1.3.6.1.4.1.8072.3.2.10"])
 
 AC_ARG_ENABLE(debug,
    AS_HELP_STRING([--enable-debug], [Enable developer debug mode, disabled by default]),

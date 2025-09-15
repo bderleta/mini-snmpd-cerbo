@@ -35,6 +35,8 @@
 #include <ctype.h>
 #include <time.h>
 #include <math.h>
+#include <dirent.h>
+#include <limits.h>
 
 #include "mini-snmpd.h"
 
@@ -132,6 +134,61 @@ void get_ipinfo(ipinfo_t *ipinfo)
 
 	memset(ipinfo, 0, sizeof(ipinfo_t));
 	parse_file("/proc/net/snmp", fields, NELEMS(fields), 1);
+}
+
+int is_thermal_zone(const struct dirent *entry)
+{
+   return (0 == strncmp(entry->d_name, "thermal_zone", strlen("thermal_zone")));
+}
+
+void get_tempsensorinfo (tempsensorinfo_t *tempsensorinfo) {
+	struct dirent **namelist;
+	char path[PATH_MAX];
+	char buf[LINE_MAX];
+	int n = scandir("/sys/class/thermal", &namelist, is_thermal_zone, alphasort);
+	if (n == -1) {
+	   perror("scandir");
+	   return;
+	}
+	g_tempsensor_list_length = 0;
+	memset(tempsensorinfo, 0, sizeof(tempsensorinfo_t));
+	while (n-- && g_tempsensor_list_length < MAX_NR_TEMPSENSORS) {
+		long long temp;
+		int tempPathWritten = snprintf(path, PATH_MAX, "/sys/class/thermal/%s/temp", namelist[n]->d_name);
+		if (tempPathWritten <= 0 || tempPathWritten >= PATH_MAX)
+			continue; /* Error or buffer overflow */
+		FILE* tempFp = fopen(path, "r");
+		if (!tempFp) {
+			perror("fopen");
+			continue; /* Cannot open temp file */
+		}
+		if (fgets(buf, LINE_MAX, tempFp)) {
+			temp = strtoll(buf, NULL, 10);
+			fclose(tempFp);
+		} else {
+			fclose(tempFp);
+			continue;
+		}
+		int typePathWritten = snprintf(path, PATH_MAX, "/sys/class/thermal/%s/type", namelist[n]->d_name);
+		if (typePathWritten <= 0 || typePathWritten >= PATH_MAX)
+			continue; /* Error or buffer overflow */
+		FILE* typeFp = fopen(path, "r");
+		if (!typeFp) {
+			perror("fopen");
+			continue; /* Cannot open temp file */
+		}
+		if (fgets(buf, LINE_MAX, typeFp) && strlen(buf) < LINE_MAX - 1) {
+			rtrim(buf);
+			strncpy_t(tempsensorinfo->device[g_tempsensor_list_length], LINE_MAX, buf, strlen(buf));
+			tempsensorinfo->value[g_tempsensor_list_length] = temp;
+			tempsensorinfo->index[g_tempsensor_list_length] = strtoul(&(namelist[n]->d_name[strlen("thermal_zone")]), NULL, 10);
+			//printf("%s (%d) %s = %lld\n", namelist[n]->d_name, tempsensorinfo->index[g_tempsensor_list_length], tempsensorinfo->device[g_tempsensor_list_length], tempsensorinfo->value[g_tempsensor_list_length]);
+			g_tempsensor_list_length++;
+		}
+		fclose(typeFp);
+		free(namelist[n]);
+	}
+	free(namelist);
 }
 
 void get_tcpinfo(tcpinfo_t *tcpinfo)

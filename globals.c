@@ -32,6 +32,8 @@ int       g_syslog  = 0;
 int       g_level   = LOG_NOTICE;
 volatile sig_atomic_t g_quit = 0;
 
+char 	  g_uname[LINE_MAX];
+
 char     *g_prognm;
 char     *g_community;
 char     *g_vendor;
@@ -46,6 +48,8 @@ size_t    g_disk_list_length        = 1;
 
 char     *g_interface_list[MAX_NR_INTERFACES];
 size_t    g_interface_list_length;
+
+size_t 	  g_tempsensor_list_length;
 
 in_port_t g_udp_port = 161;
 in_port_t g_tcp_port = 161;

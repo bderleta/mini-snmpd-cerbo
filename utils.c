@@ -29,6 +29,7 @@
 #include <stdarg.h>
 #include <ctype.h>
 #include <time.h>
+#include <assert.h>
 
 #include "mini-snmpd.h"
 
@@ -302,6 +303,30 @@ void dump_response(const response_t *response)
 }
 #endif /* DEBUG */
 
+#define WHITESPACE " \t\n\r\f\v"
+
+char* rtrim(char* s)
+{
+	char* r = s, * end;
+	size_t len = strlen(s) - 1;
+	for (end = s+len;
+	   strstr(WHITESPACE, r+len) && end != s;
+	   end = s+len , *(r + (len--)) = 0);
+	return r;
+}
+
+// Copy string "in" with at most "insz" chars to buffer "out", which
+// is "outsz" bytes long. The output is always 0-terminated. Unlike
+// strncpy(), strncpy_t() does not zero fill remaining space in the
+// output buffer
+// https://stackoverflow.com/a/58237928
+char* strncpy_t(char* out, size_t outsz, const char* in, size_t insz) {
+    assert(outsz > 0);
+    while(--outsz > 0 && insz > 0 && *in) { *out++ = *in++; insz--; }
+    *out = 0;
+    return out;
+}
+
 char *oid_ntoa(const oid_t *oid)
 {
 	size_t i, len = 0;
@@ -412,21 +437,6 @@ int find_ifname(char *ifname)
 
 	return -1;
 }
-
-#ifdef CONFIG_ENABLE_DEMO
-void get_demoinfo(demoinfo_t *demoinfo)
-{
-	static int did_init = 0;
-
-	if (did_init == 0) {
-		srand(time(NULL));
-		did_init = 1;
-	}
-
-	demoinfo->random_value_1 = rand();
-	demoinfo->random_value_2 = rand();
-}
-#endif
 
 int logit(int priority, int syserr, const char *fmt, ...)
 {

@@ -54,6 +54,7 @@ static const oid_t m_memory_oid         = { { 1, 3, 6, 1, 4, 1, 2021, 4,        
 static const oid_t m_disk_oid           = { { 1, 3, 6, 1, 4, 1, 2021, 9, 1      },  9, 11 };
 static const oid_t m_load_oid           = { { 1, 3, 6, 1, 4, 1, 2021, 10, 1     },  9, 11 };
 static const oid_t m_cpu_oid            = { { 1, 3, 6, 1, 4, 1, 2021, 11        },  8, 10 };
+static const oid_t m_tempsensor_oid     = { { 1, 3, 6, 1, 4, 1, 2021, 13, 16, 2, 1}, 11, 13 /* ??? */ };
 #ifdef CONFIG_ENABLE_DEMO
 static const oid_t m_demo_oid           = { { 1, 3, 6, 1, 4, 1, 99999           },  7, 10 };
 #endif
@@ -747,6 +748,7 @@ static int update_c64(const oid_t *oid, int col, int row, size_t *pos, long long
 int mib_build(void)
 {
 	netinfo_t netinfo;
+	tempsensorinfo_t tempsensorinfo;
 	char hostname[MAX_STRING_SIZE];
 	char name[16];
 	size_t i;
@@ -765,6 +767,7 @@ int mib_build(void)
 		hostname[sizeof(hostname) - 1] = '\0';
 
 	get_netinfo(&netinfo);
+	get_tempsensorinfo(&tempsensorinfo);
 
 	/*
 	 * The system MIB: basic info about the host (SNMPv2-MIB.txt)
@@ -1048,6 +1051,26 @@ int mib_build(void)
 	    !mib_alloc_entry(&m_cpu_oid, 60, 0, BER_TYPE_COUNTER))
 		return -1;
 
+	/* LM-SENSORS-MIB */
+	if (g_tempsensor_list_length > 0) {
+		
+		for (i = 0; i < g_tempsensor_list_length; i++) {
+			if (build_int(&m_tempsensor_oid, 1, tempsensorinfo.index[i], tempsensorinfo.index[i]) == -1)
+				return -1;
+		}
+
+		for (i = 0; i < g_tempsensor_list_length; i++) {
+			if (build_str(&m_tempsensor_oid, 2, tempsensorinfo.index[i], tempsensorinfo.device[i]) == -1)
+				return -1;
+		}		
+		
+		for (i = 0; i < g_tempsensor_list_length; i++) {
+			if (build_gge(&m_tempsensor_oid, 3, tempsensorinfo.index[i], tempsensorinfo.value[i]) == -1)
+				return -1;
+		}		
+		
+	}
+
 	/* The demo MIB: two random integers
 	 * Caution: on changes, adapt the corresponding mib_update() section too!
 	 */
@@ -1072,6 +1095,7 @@ int mib_update(int full)
 		tcpinfo_t tcpinfo;
 		udpinfo_t udpinfo;
 		cpuinfo_t cpuinfo;
+		tempsensorinfo_t tempsensorinfo;
 #ifdef CONFIG_ENABLE_DEMO
 		demoinfo_t demoinfo;
 #endif
@@ -1421,6 +1445,21 @@ int mib_update(int full)
 		    update_cnt(&m_cpu_oid, 59, 0, &pos, u.cpuinfo.irqs)   == -1 ||
 		    update_cnt(&m_cpu_oid, 60, 0, &pos, u.cpuinfo.cntxts) == -1)
 			return -1;
+	}
+	
+	/*
+	 * LM-SENSORS-MIB.mib
+	 */
+	if (full) {
+		get_tempsensorinfo(&u.tempsensorinfo);
+		if (g_tempsensor_list_length > 0) {
+			for (i = 0; i < g_tempsensor_list_length; i++) {
+				if (update_int(&m_tempsensor_oid, 1, u.tempsensorinfo.index[i], &pos, u.tempsensorinfo.index[i]) == -1 ||
+					update_str(&m_tempsensor_oid, 2, u.tempsensorinfo.index[i], &pos, u.tempsensorinfo.device[i]) == -1 ||
+					update_gge(&m_tempsensor_oid, 3, u.tempsensorinfo.index[i], &pos, u.tempsensorinfo.value[i]) == -1)
+					return -1;
+			}
+		}
 	}
 
 	/*
