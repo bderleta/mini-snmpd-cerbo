@@ -32,7 +32,7 @@ Some things were added/changed:
 
 Some things are in progress:
 - Board temperature from `/sys/class/hwmon/hwmonX`
-- Voltage inputs
+- Voltage inputs, digital IO
 
 Introduction
 ------------
@@ -129,28 +129,6 @@ Check monitored disks:
     UCD-SNMP-MIB::dskPercentNode.1 = INTEGER: 10
 
 
-Build & Install
----------------
-
-The [GNU Configure & Build][buildsystem] system use `/usr/local` as the
-default install prefix.  Usually this is sufficient, the below example
-installs to `/usr` instead:
-
-    tar xf mini-snmpd-X.Y.tar.xz
-	cd mini-snmpd-X.Y/
-    ./configure --prefix=/usr
-    make -j5
-    sudo make install-strip
-
-To use the `/etc/mini-snmpd.conf` support, both the `pkgconfig` and
-`libConfuse` packages must be installed.  Installing from pre-built
-packages differ between systems, check naming and suffix (`-dev`) to
-match your system.
-
-> **Note:** mini-snmpd-X.Y.tar.gz is not an actual release.  See the
-> [releases page on GitHub][releases] for the latest versioned release.
-
-
 Building from GIT
 -----------------
 
@@ -167,6 +145,9 @@ the [GNU Configure & Build][buildsystem] system:
 To build from GIT you first need to clone the repository and run the
 `autogen.sh` script.  This requires `automake` and `autoconf` to be
 installed on your system.
+
+Building requires Venus OS-full, as some additional opkg packages need 
+to be installed.
 
     git clone https://github.com/troglobit/mini-snmpd.git
     cd mini-snmpd/
