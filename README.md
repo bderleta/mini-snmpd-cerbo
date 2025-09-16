@@ -27,12 +27,12 @@ Some things were added/changed:
 - New default vendor OID
 - Support for `/sys/class/thermal/thermal_zoneX`
 - Automatic system description from `uname` call
+- Relay states (via "rpigpiomonitor"-compatible interface)
 
 Some things are in progress:
 - Board temperature from `/sys/class/hwmon/hwmonX`
 - Voltage inputs
 - CPU details
-- Relay states
 
 Introduction
 ------------
