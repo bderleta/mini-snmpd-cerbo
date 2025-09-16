@@ -759,6 +759,7 @@ int mib_build(void)
 {
 	netinfo_t netinfo;
 	tempsensorinfo_t tempsensorinfo;
+	cpuinfo_t cpuinfo;
 	char hostname[MAX_STRING_SIZE];
 	char name[16];
 	size_t i;
@@ -778,6 +779,7 @@ int mib_build(void)
 
 	get_netinfo(&netinfo);
 	get_tempsensorinfo(&tempsensorinfo);
+	get_cpuinfo(&cpuinfo); /* prepopulate raw values for delta */
 
 	/*
 	 * The system MIB: basic info about the host (SNMPv2-MIB.txt)
@@ -1053,6 +1055,10 @@ int mib_build(void)
 	/* The CPU MIB: CPU statistics (UCD-SNMP-MIB.txt)
 	 * Caution: on changes, adapt the corresponding mib_update() section too!
 	 */
+	if (!mib_alloc_entry(&m_cpu_oid, 9, 0, BER_TYPE_INTEGER) ||
+	    !mib_alloc_entry(&m_cpu_oid, 10, 0, BER_TYPE_INTEGER) ||
+	    !mib_alloc_entry(&m_cpu_oid, 11, 0, BER_TYPE_INTEGER))
+	    return -1;
 	if (!mib_alloc_entry(&m_cpu_oid, 50, 0, BER_TYPE_COUNTER) ||
 	    !mib_alloc_entry(&m_cpu_oid, 51, 0, BER_TYPE_COUNTER) ||
 	    !mib_alloc_entry(&m_cpu_oid, 52, 0, BER_TYPE_COUNTER) ||
@@ -1464,15 +1470,20 @@ int mib_update(int full)
 	 */
 	if (full) {
 		get_cpuinfo(&u.cpuinfo);
-		if (update_cnt(&m_cpu_oid, 50, 0, &pos, u.cpuinfo.cpu_user)    == -1 ||
-		    update_cnt(&m_cpu_oid, 51, 0, &pos, u.cpuinfo.cpu_nice)    == -1 ||
-		    update_cnt(&m_cpu_oid, 52, 0, &pos, u.cpuinfo.cpu_system)  == -1 ||
-		    update_cnt(&m_cpu_oid, 53, 0, &pos, u.cpuinfo.cpu_idle)    == -1 ||
-		    update_cnt(&m_cpu_oid, 54, 0, &pos, u.cpuinfo.cpu_iowait)  == -1 ||
-		    update_cnt(&m_cpu_oid, 56, 0, &pos, u.cpuinfo.cpu_irq)     == -1 ||
+		if (update_int(&m_cpu_oid, 9, 0, &pos, u.cpuinfo.cpu_user)    == -1 ||
+		    update_int(&m_cpu_oid, 10, 0, &pos, u.cpuinfo.cpu_system)    == -1 ||
+		    update_int(&m_cpu_oid, 11, 0, &pos, u.cpuinfo.cpu_idle)  == -1)
+		    return -1;
+		
+		if (update_cnt(&m_cpu_oid, 50, 0, &pos, u.cpuinfo.cpu_raw_user)    == -1 ||
+		    update_cnt(&m_cpu_oid, 51, 0, &pos, u.cpuinfo.cpu_raw_nice)    == -1 ||
+		    update_cnt(&m_cpu_oid, 52, 0, &pos, u.cpuinfo.cpu_raw_system)  == -1 ||
+		    update_cnt(&m_cpu_oid, 53, 0, &pos, u.cpuinfo.cpu_raw_idle)    == -1 ||
+		    update_cnt(&m_cpu_oid, 54, 0, &pos, u.cpuinfo.cpu_raw_iowait)  == -1 ||
+		    update_cnt(&m_cpu_oid, 56, 0, &pos, u.cpuinfo.cpu_raw_irq)     == -1 ||
 		    update_cnt(&m_cpu_oid, 59, 0, &pos, u.cpuinfo.intr)    == -1 ||
 		    update_cnt(&m_cpu_oid, 60, 0, &pos, u.cpuinfo.ctxt)  == -1 ||
-			update_cnt(&m_cpu_oid, 61, 0, &pos, u.cpuinfo.cpu_softirq) == -1)
+			update_cnt(&m_cpu_oid, 61, 0, &pos, u.cpuinfo.cpu_raw_softirq) == -1)
 		    return -1;
 	}
 	

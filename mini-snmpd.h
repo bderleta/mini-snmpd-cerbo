@@ -201,15 +201,19 @@ typedef struct meminfo_s {
 typedef struct cpuinfo_s {
 	unsigned int num_cpus;
 	
-	long long cpu_user;
-	long long cpu_nice;
-	long long cpu_system;
-	long long cpu_idle;
-	long long cpu_iowait;
-	long long cpu_irq;
-	long long cpu_softirq;
+	long long cpu_raw_user;
+	long long cpu_raw_nice;
+	long long cpu_raw_system;
+	long long cpu_raw_idle;
+	long long cpu_raw_iowait;
+	long long cpu_raw_irq;
+	long long cpu_raw_softirq;
 	long long intr;
 	long long ctxt;
+	
+	long int cpu_system;
+	long int cpu_user;
+	long int cpu_idle;
 } cpuinfo_t;
 
 typedef struct diskinfo_s {
