@@ -55,6 +55,16 @@ static const oid_t m_disk_oid           = { { 1, 3, 6, 1, 4, 1, 2021, 9, 1      
 static const oid_t m_load_oid           = { { 1, 3, 6, 1, 4, 1, 2021, 10, 1     },  9, 11 };
 static const oid_t m_cpu_oid            = { { 1, 3, 6, 1, 4, 1, 2021, 11        },  8, 10 };
 static const oid_t m_tempsensor_oid     = { { 1, 3, 6, 1, 4, 1, 2021, 13, 16, 2, 1}, 11, 13 /* ??? */ };
+
+/* special feature to show relay status in LibreNMS
+ * acts like "rpigpiomonitor" script
+ * OID: .1.3.6.1.4.1.8072.1.3.2.4.1.2         ."rpigpiomonitor"
+ * 		[NET-SNMP-EXTEND-MIB::nsExtendOutLine]
+ */ 
+static const oid_t m_rpigpiomonitor_oid = { { 1,3,6,1,4,1,8072,1,3,2,4,1,2,14,114,112,105,103,112,105,111,109,111,110,105,116,111/*,114 */ }, 27, 29 };
+	
+	
+	
 #ifdef CONFIG_ENABLE_DEMO
 static const oid_t m_demo_oid           = { { 1, 3, 6, 1, 4, 1, 99999           },  7, 10 };
 #endif
@@ -1047,9 +1057,12 @@ int mib_build(void)
 	    !mib_alloc_entry(&m_cpu_oid, 51, 0, BER_TYPE_COUNTER) ||
 	    !mib_alloc_entry(&m_cpu_oid, 52, 0, BER_TYPE_COUNTER) ||
 	    !mib_alloc_entry(&m_cpu_oid, 53, 0, BER_TYPE_COUNTER) ||
+	    !mib_alloc_entry(&m_cpu_oid, 54, 0, BER_TYPE_COUNTER) ||
+	    !mib_alloc_entry(&m_cpu_oid, 56, 0, BER_TYPE_COUNTER) ||
 	    !mib_alloc_entry(&m_cpu_oid, 59, 0, BER_TYPE_COUNTER) ||
-	    !mib_alloc_entry(&m_cpu_oid, 60, 0, BER_TYPE_COUNTER))
-		return -1;
+	    !mib_alloc_entry(&m_cpu_oid, 60, 0, BER_TYPE_COUNTER) ||
+		!mib_alloc_entry(&m_cpu_oid, 61, 0, BER_TYPE_COUNTER))
+	    return -1;
 
 	/* LM-SENSORS-MIB */
 	if (g_tempsensor_list_length > 0) {
@@ -1069,6 +1082,18 @@ int mib_build(void)
 				return -1;
 		}		
 		
+	}
+
+	/*
+	 * rpigpiomonitor
+	 */
+	if (
+		!mib_alloc_entry(&m_rpigpiomonitor_oid, 114, 1, BER_TYPE_OCTET_STRING) || // definition for Relay 1
+		!mib_alloc_entry(&m_rpigpiomonitor_oid, 114, 2, BER_TYPE_OCTET_STRING) ||  // state
+		!mib_alloc_entry(&m_rpigpiomonitor_oid, 114, 3, BER_TYPE_OCTET_STRING) || // definition for Relay 2
+		!mib_alloc_entry(&m_rpigpiomonitor_oid, 114, 4, BER_TYPE_OCTET_STRING)) { // state
+		printf("Alloc failed\n");
+		return -1;
 	}
 
 	/* The demo MIB: two random integers
@@ -1096,6 +1121,7 @@ int mib_update(int full)
 		udpinfo_t udpinfo;
 		cpuinfo_t cpuinfo;
 		tempsensorinfo_t tempsensorinfo;
+		cerboinfo_t cerboinfo;
 #ifdef CONFIG_ENABLE_DEMO
 		demoinfo_t demoinfo;
 #endif
@@ -1438,13 +1464,16 @@ int mib_update(int full)
 	 */
 	if (full) {
 		get_cpuinfo(&u.cpuinfo);
-		if (update_cnt(&m_cpu_oid, 50, 0, &pos, u.cpuinfo.user)   == -1 ||
-		    update_cnt(&m_cpu_oid, 51, 0, &pos, u.cpuinfo.nice)   == -1 ||
-		    update_cnt(&m_cpu_oid, 52, 0, &pos, u.cpuinfo.system) == -1 ||
-		    update_cnt(&m_cpu_oid, 53, 0, &pos, u.cpuinfo.idle)   == -1 ||
-		    update_cnt(&m_cpu_oid, 59, 0, &pos, u.cpuinfo.irqs)   == -1 ||
-		    update_cnt(&m_cpu_oid, 60, 0, &pos, u.cpuinfo.cntxts) == -1)
-			return -1;
+		if (update_cnt(&m_cpu_oid, 50, 0, &pos, u.cpuinfo.cpu_user)    == -1 ||
+		    update_cnt(&m_cpu_oid, 51, 0, &pos, u.cpuinfo.cpu_nice)    == -1 ||
+		    update_cnt(&m_cpu_oid, 52, 0, &pos, u.cpuinfo.cpu_system)  == -1 ||
+		    update_cnt(&m_cpu_oid, 53, 0, &pos, u.cpuinfo.cpu_idle)    == -1 ||
+		    update_cnt(&m_cpu_oid, 54, 0, &pos, u.cpuinfo.cpu_iowait)  == -1 ||
+		    update_cnt(&m_cpu_oid, 56, 0, &pos, u.cpuinfo.cpu_irq)     == -1 ||
+		    update_cnt(&m_cpu_oid, 59, 0, &pos, u.cpuinfo.intr)    == -1 ||
+		    update_cnt(&m_cpu_oid, 60, 0, &pos, u.cpuinfo.ctxt)  == -1 ||
+			update_cnt(&m_cpu_oid, 61, 0, &pos, u.cpuinfo.cpu_softirq) == -1)
+		    return -1;
 	}
 	
 	/*
@@ -1459,6 +1488,18 @@ int mib_update(int full)
 					update_gge(&m_tempsensor_oid, 3, u.tempsensorinfo.index[i], &pos, u.tempsensorinfo.value[i]) == -1)
 					return -1;
 			}
+		}
+	}
+
+	if (full) {
+		get_cerboinfo(&u.cerboinfo);
+		if (
+			update_str(&m_rpigpiomonitor_oid, 114, 1, &pos, CERBO_RELAY1_DEF) == -1 ||
+			update_str(&m_rpigpiomonitor_oid, 114, 2, &pos, u.cerboinfo.relay1) == -1 ||
+			update_str(&m_rpigpiomonitor_oid, 114, 3, &pos, CERBO_RELAY2_DEF) == -1 ||
+			update_str(&m_rpigpiomonitor_oid, 114, 4, &pos, u.cerboinfo.relay2) == -1
+		) {
+			return -1;
 		}
 	}
 

@@ -36,15 +36,16 @@
 #define EXIT_SYSCALL                                    2
 
 #define MAX_NR_CLIENTS                                  16
-#define MAX_NR_OIDS                                     20
-#define MAX_NR_SUBIDS                                   20
+#define MAX_NR_OIDS                                     35 // was: 20
+#define MAX_NR_SUBIDS                                   35 // was: 20
 #define MAX_NR_DISKS                                    4
 #define MAX_NR_INTERFACES                               8
 #define MAX_NR_VALUES                                   2048
 #define MAX_NR_TEMPSENSORS								16
+#define MAX_NR_CPUS										4
 
 #define MAX_PACKET_SIZE                                 2048
-#define MAX_STRING_SIZE                                 64
+#define MAX_STRING_SIZE                                 256
 
 /*
  * SNMP dependent defines
@@ -126,6 +127,8 @@
 #define my_inet_addrstrlen      INET6_ADDRSTRLEN
 #endif/* CONFIG_ENABLE_IPV6 */
 
+#define	CERBO_RELAY1_DEF "gpio35,state,Relay 1,-1,-1,,1;0,2,Open;1,0,Closed;-1,1,Unknown;"
+#define CERBO_RELAY2_DEF "gpio36,state,Relay 2,-1,-1,,1;0,2,Open;1,0,Closed;-1,1,Unknown;"
 
 /*
  * Data types
@@ -196,12 +199,17 @@ typedef struct meminfo_s {
 } meminfo_t;
 
 typedef struct cpuinfo_s {
-	long long user;
-	long long nice;
-	long long system;
-	long long idle;
-	long long irqs;
-	long long cntxts;
+	unsigned int num_cpus;
+	
+	long long cpu_user;
+	long long cpu_nice;
+	long long cpu_system;
+	long long cpu_idle;
+	long long cpu_iowait;
+	long long cpu_irq;
+	long long cpu_softirq;
+	long long intr;
+	long long ctxt;
 } cpuinfo_t;
 
 typedef struct diskinfo_s {
@@ -241,9 +249,19 @@ typedef struct netinfo_s {
 
 typedef struct tempsensorinfo_s {
 	unsigned int index[MAX_NR_TEMPSENSORS];
-	long long value[MAX_NR_TEMPSENSORS];
+	long int value[MAX_NR_TEMPSENSORS];
 	char device[MAX_NR_TEMPSENSORS][LINE_MAX];
 } tempsensorinfo_t;
+
+typedef struct cerboinfo_s {
+	char relay1[3];
+	char relay2[3];
+} cerboinfo_t;
+
+/* relays on CerboGX:
+ * gpio35 = relay0
+ * gpio36 = relay1
+ */
  
 typedef struct ipinfo_s {
 	long long ipForwarding;
@@ -311,6 +329,8 @@ extern size_t 	 g_tempsensor_list_length;
 extern in_port_t g_udp_port;
 extern in_port_t g_tcp_port;
 
+extern cpuinfo_t g_prev_cpuinfo;
+
 extern client_t  g_udp_client;
 extern client_t *g_tcp_client_list[MAX_NR_CLIENTS];
 extern size_t    g_tcp_client_list_length;
@@ -348,6 +368,9 @@ int          read_config (char *file);
 int          parse_file  (char *file, field_t fields[], size_t limit, size_t skip_prefix);
 int          read_file   (const char *filename, char *buffer, size_t size);
 
+int 		 read_file_long(const char *filename, long int* dest);
+int 		 read_file_line(const char *filename, char *buf, size_t buf_size);
+
 unsigned int read_value  (const char *buffer, const char *prefix);
 void         read_values (const char *buffer, const char *prefix, unsigned int *values, int count);
 
@@ -367,6 +390,7 @@ void         get_udpinfo        (udpinfo_t *udpinfo);
 void         get_diskinfo       (diskinfo_t *diskinfo);
 void         get_netinfo        (netinfo_t *netinfo);
 void		 get_tempsensorinfo (tempsensorinfo_t *tempsensorinfo);
+void		 get_cerboinfo		(cerboinfo_t *cerboinfo);
 int          logit              (int priority, int syserr, const char *fmt, ...);
 
 int snmp_packet_complete   (const client_t *client);

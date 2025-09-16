@@ -43,7 +43,7 @@ char     *g_contact;
 char     *g_bind_to_device;
 char     *g_user;
 
-char     *g_disk_list[MAX_NR_DISKS] = { "/" };
+char     *g_disk_list[MAX_NR_DISKS] = { "/data" };
 size_t    g_disk_list_length        = 1;
 
 char     *g_interface_list[MAX_NR_INTERFACES];
@@ -56,6 +56,8 @@ in_port_t g_tcp_port = 161;
 
 int       g_udp_sockfd = -1;
 int       g_tcp_sockfd = -1;
+
+cpuinfo_t g_prev_cpuinfo = {0};
 
 client_t  g_udp_client;
 client_t *g_tcp_client_list[MAX_NR_CLIENTS];

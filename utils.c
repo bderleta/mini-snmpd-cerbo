@@ -45,6 +45,42 @@ void *allocate(size_t len)
 	return buf;
 }
 
+int read_file_long(const char *filename, long int* dest) {
+	char buf[16] = {0};
+	int result = read_file_line(filename, buf, sizeof(buf));
+	if (result == 0) {
+		*dest = strtol(buf, NULL, 10);
+		if (0 == *dest && errno) {
+			logit(LOG_WARNING, errno, "Failed reading long int from %s", filename);
+			return -1;
+		}
+	}
+	return result;
+} 
+
+int read_file_line(const char *filename, char *buf, size_t buf_size) 
+{
+	int ret;
+	FILE *fp;
+
+	fp = fopen(filename, "r");
+	if (!fp) {
+		logit(LOG_WARNING, errno, "Failed opening %s", filename);
+		return -1;
+	}
+
+	buf = fgets(buf, buf_size, fp);
+	
+	ret = fclose(fp);
+	if (NULL == buf || ret == -1) {
+		logit(LOG_WARNING, errno, "Failed reading %s", filename);
+		return -1;
+	}
+
+	rtrim(buf);
+
+	return 0;
+}
 
 static inline int parse_lineint(char *buf, field_t *f, size_t *skip_prefix)
 {

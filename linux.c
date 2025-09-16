@@ -102,14 +102,16 @@ void get_meminfo(meminfo_t *meminfo)
 
 void get_cpuinfo(cpuinfo_t *cpuinfo)
 {
-	field_t fields[] = {
-		{ "cpu ",  4, { &cpuinfo->user, &cpuinfo->nice, &cpuinfo->system, &cpuinfo->idle }},
-		{ "intr ", 1, { &cpuinfo->irqs   }},
-		{ "ctxt ", 1, { &cpuinfo->cntxts }},
+	/* skipping `steal`, `guest` and `guest_nice` as they aren't being used in Venus OS */
+	field_t fields[] = { /* adjust MAX_NR_CPUS also when extending */
+		{ "cpu ",  7, { &cpuinfo->cpu_user, &cpuinfo->cpu_nice, &cpuinfo->cpu_system, &cpuinfo->cpu_idle, &cpuinfo->cpu_iowait, &cpuinfo->cpu_irq, &cpuinfo->cpu_softirq }},
+		{ "intr", 1,  { &cpuinfo->intr }},
+		{ "ctxt", 1,  { &cpuinfo->ctxt }},
 	};
-
+	
 	memset(cpuinfo, 0, sizeof(cpuinfo_t));
 	parse_file("/proc/stat", fields, NELEMS(fields), 0);
+	memcpy(&g_prev_cpuinfo, cpuinfo, sizeof(cpuinfo_t));
 }
 
 void get_ipinfo(ipinfo_t *ipinfo)
@@ -136,6 +138,22 @@ void get_ipinfo(ipinfo_t *ipinfo)
 	parse_file("/proc/net/snmp", fields, NELEMS(fields), 1);
 }
 
+/* Cerbo GX-specific readouts */
+void get_cerboinfo(cerboinfo_t *cerboinfo) {
+	memset(cerboinfo, 0, sizeof(cerboinfo_t));
+	strcpy(cerboinfo->relay1, "-1");
+	strcpy(cerboinfo->relay2, "-1");
+	long int relay;
+	if (read_file_long("/sys/class/gpio/gpio35/value", &relay) == 0 && relay >= 0 && relay <= 1) {
+		cerboinfo->relay1[0] = 48 + relay;
+		cerboinfo->relay1[1] = 0;
+	}
+	if (read_file_long("/sys/class/gpio/gpio36/value", &relay) == 0 && relay >= 0 && relay <= 1) {
+		cerboinfo->relay2[0] = 48 + relay;
+		cerboinfo->relay2[1] = 0;
+	}
+}
+
 int is_thermal_zone(const struct dirent *entry)
 {
    return (0 == strncmp(entry->d_name, "thermal_zone", strlen("thermal_zone")));
@@ -153,39 +171,21 @@ void get_tempsensorinfo (tempsensorinfo_t *tempsensorinfo) {
 	g_tempsensor_list_length = 0;
 	memset(tempsensorinfo, 0, sizeof(tempsensorinfo_t));
 	while (n-- && g_tempsensor_list_length < MAX_NR_TEMPSENSORS) {
-		long long temp;
+		long int temp;
 		int tempPathWritten = snprintf(path, PATH_MAX, "/sys/class/thermal/%s/temp", namelist[n]->d_name);
 		if (tempPathWritten <= 0 || tempPathWritten >= PATH_MAX)
 			continue; /* Error or buffer overflow */
-		FILE* tempFp = fopen(path, "r");
-		if (!tempFp) {
-			perror("fopen");
-			continue; /* Cannot open temp file */
-		}
-		if (fgets(buf, LINE_MAX, tempFp)) {
-			temp = strtoll(buf, NULL, 10);
-			fclose(tempFp);
-		} else {
-			fclose(tempFp);
-			continue;
-		}
+		if (read_file_long(path, &temp))
+			continue; /* Error reading */
 		int typePathWritten = snprintf(path, PATH_MAX, "/sys/class/thermal/%s/type", namelist[n]->d_name);
 		if (typePathWritten <= 0 || typePathWritten >= PATH_MAX)
 			continue; /* Error or buffer overflow */
-		FILE* typeFp = fopen(path, "r");
-		if (!typeFp) {
-			perror("fopen");
-			continue; /* Cannot open temp file */
-		}
-		if (fgets(buf, LINE_MAX, typeFp) && strlen(buf) < LINE_MAX - 1) {
-			rtrim(buf);
+		if (read_file_line(path, buf, sizeof(buf)) == 0) {
 			strncpy_t(tempsensorinfo->device[g_tempsensor_list_length], LINE_MAX, buf, strlen(buf));
 			tempsensorinfo->value[g_tempsensor_list_length] = temp;
 			tempsensorinfo->index[g_tempsensor_list_length] = strtoul(&(namelist[n]->d_name[strlen("thermal_zone")]), NULL, 10);
-			//printf("%s (%d) %s = %lld\n", namelist[n]->d_name, tempsensorinfo->index[g_tempsensor_list_length], tempsensorinfo->device[g_tempsensor_list_length], tempsensorinfo->value[g_tempsensor_list_length]);
 			g_tempsensor_list_length++;
 		}
-		fclose(typeFp);
 		free(namelist[n]);
 	}
 	free(namelist);
