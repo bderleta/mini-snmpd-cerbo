@@ -1098,7 +1098,6 @@ int mib_build(void)
 		!mib_alloc_entry(&m_rpigpiomonitor_oid, 114, 2, BER_TYPE_OCTET_STRING) ||  // state
 		!mib_alloc_entry(&m_rpigpiomonitor_oid, 114, 3, BER_TYPE_OCTET_STRING) || // definition for Relay 2
 		!mib_alloc_entry(&m_rpigpiomonitor_oid, 114, 4, BER_TYPE_OCTET_STRING)) { // state
-		printf("Alloc failed\n");
 		return -1;
 	}
 
