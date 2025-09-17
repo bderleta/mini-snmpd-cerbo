@@ -103,7 +103,7 @@ void get_meminfo(meminfo_t *meminfo)
 void get_cpuinfo(cpuinfo_t *cpuinfo)
 {
 	/* skipping `steal`, `guest` and `guest_nice` as they aren't being used in Venus OS */
-	field_t fields[] = { /* adjust MAX_NR_CPUS also when extending */
+	field_t fields[] = {
 		{ "cpu ",  7, { &cpuinfo->cpu_raw_user, &cpuinfo->cpu_raw_nice, &cpuinfo->cpu_raw_system, &cpuinfo->cpu_raw_idle, &cpuinfo->cpu_raw_iowait, &cpuinfo->cpu_raw_irq, &cpuinfo->cpu_raw_softirq }},
 		{ "intr", 1,  { &cpuinfo->intr }},
 		{ "ctxt", 1,  { &cpuinfo->ctxt }},
@@ -158,11 +158,11 @@ void get_cerboinfo(cerboinfo_t *cerboinfo) {
 	strcpy(cerboinfo->relay2, "-1");
 	long int relay;
 	if (read_file_long("/sys/class/gpio/gpio35/value", &relay) == 0 && relay >= 0 && relay <= 1) {
-		cerboinfo->relay1[0] = 48 + relay;
+		cerboinfo->relay1[0] = '0' + relay;
 		cerboinfo->relay1[1] = 0;
 	}
 	if (read_file_long("/sys/class/gpio/gpio36/value", &relay) == 0 && relay >= 0 && relay <= 1) {
-		cerboinfo->relay2[0] = 48 + relay;
+		cerboinfo->relay2[0] = '0' + relay;
 		cerboinfo->relay2[1] = 0;
 	}
 }
