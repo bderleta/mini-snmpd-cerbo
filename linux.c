@@ -104,7 +104,12 @@ void get_cpuinfo(cpuinfo_t *cpuinfo)
 {
 	/* skipping `steal`, `guest` and `guest_nice` as they aren't being used in Venus OS */
 	field_t fields[] = {
-		{ "cpu ",  7, { &cpuinfo->cpu_raw_user, &cpuinfo->cpu_raw_nice, &cpuinfo->cpu_raw_system, &cpuinfo->cpu_raw_idle, &cpuinfo->cpu_raw_iowait, &cpuinfo->cpu_raw_irq, &cpuinfo->cpu_raw_softirq }},
+		{ "cpu ",  7, { 
+			&cpuinfo->cpu_raw_user, &cpuinfo->cpu_raw_nice, 
+			&cpuinfo->cpu_raw_system, &cpuinfo->cpu_raw_idle, 
+			&cpuinfo->cpu_raw_iowait, &cpuinfo->cpu_raw_irq, 
+			&cpuinfo->cpu_raw_softirq 
+		}},
 		{ "intr", 1,  { &cpuinfo->intr }},
 		{ "ctxt", 1,  { &cpuinfo->ctxt }},
 	};
@@ -112,8 +117,17 @@ void get_cpuinfo(cpuinfo_t *cpuinfo)
 	memset(cpuinfo, 0, sizeof(cpuinfo_t));
 	parse_file("/proc/stat", fields, NELEMS(fields), 0);
 	
-	double total_delta = (cpuinfo->cpu_raw_user + cpuinfo->cpu_raw_nice + cpuinfo->cpu_raw_system + cpuinfo->cpu_raw_idle + cpuinfo->cpu_raw_iowait + cpuinfo->cpu_raw_irq + cpuinfo->cpu_raw_softirq) - 
-				(g_prev_cpuinfo.cpu_raw_user + g_prev_cpuinfo.cpu_raw_nice + g_prev_cpuinfo.cpu_raw_system + g_prev_cpuinfo.cpu_raw_idle + g_prev_cpuinfo.cpu_raw_iowait + g_prev_cpuinfo.cpu_raw_irq + g_prev_cpuinfo.cpu_raw_softirq);
+	double total_delta = (
+		cpuinfo->cpu_raw_user + cpuinfo->cpu_raw_nice + 
+		cpuinfo->cpu_raw_system + cpuinfo->cpu_raw_idle + 
+		cpuinfo->cpu_raw_iowait + cpuinfo->cpu_raw_irq + 
+		cpuinfo->cpu_raw_softirq
+	) - (
+		g_prev_cpuinfo.cpu_raw_user + g_prev_cpuinfo.cpu_raw_nice + 
+		g_prev_cpuinfo.cpu_raw_system + g_prev_cpuinfo.cpu_raw_idle + 
+		g_prev_cpuinfo.cpu_raw_iowait + g_prev_cpuinfo.cpu_raw_irq + 
+		g_prev_cpuinfo.cpu_raw_softirq
+	);
 	double user_delta = (cpuinfo->cpu_raw_user - g_prev_cpuinfo.cpu_raw_user);
 	double system_delta = (cpuinfo->cpu_raw_system - g_prev_cpuinfo.cpu_raw_system);
 	double idle_delta = (cpuinfo->cpu_raw_idle - g_prev_cpuinfo.cpu_raw_idle);
