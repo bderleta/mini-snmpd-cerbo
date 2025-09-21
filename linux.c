@@ -186,36 +186,53 @@ int is_thermal_zone(const struct dirent *entry)
    return (0 == strncmp(entry->d_name, "thermal_zone", strlen("thermal_zone")));
 }
 
-void get_tempsensorinfo (tempsensorinfo_t *tempsensorinfo) {
+int is_hwmon(const struct dirent *entry)
+{
+   return (0 == strncmp(entry->d_name, "hwmon", strlen("hwmon")));
+}
+
+void scan_tempsensor_dir(
+	tempsensorinfo_t *tempsensorinfo, 
+	const char* dir, 
+	int (*filter)(const struct dirent *),
+	const char* temp_node,
+	const char* name_node
+	
+) {
 	struct dirent **namelist;
 	char path[PATH_MAX];
 	char buf[LINE_MAX];
-	int n = scandir("/sys/class/thermal", &namelist, is_thermal_zone, alphasort);
+	int n = scandir(dir, &namelist, filter, alphasort);
 	if (n == -1) {
 	   perror("scandir");
 	   return;
 	}
-	g_tempsensor_list_length = 0;
-	memset(tempsensorinfo, 0, sizeof(tempsensorinfo_t));
 	while (n-- && g_tempsensor_list_length < MAX_NR_TEMPSENSORS) {
 		long int temp;
-		int tempPathWritten = snprintf(path, PATH_MAX, "/sys/class/thermal/%s/temp", namelist[n]->d_name);
+		int tempPathWritten = snprintf(path, PATH_MAX, "/%s/%s/%s", dir, namelist[n]->d_name, temp_node);
 		if (tempPathWritten <= 0 || tempPathWritten >= PATH_MAX)
 			continue; /* Error or buffer overflow */
 		if (read_file_long(path, &temp))
 			continue; /* Error reading */
-		int typePathWritten = snprintf(path, PATH_MAX, "/sys/class/thermal/%s/type", namelist[n]->d_name);
+		int typePathWritten = snprintf(path, PATH_MAX, "/%s/%s/%s", dir, namelist[n]->d_name, name_node);
 		if (typePathWritten <= 0 || typePathWritten >= PATH_MAX)
 			continue; /* Error or buffer overflow */
 		if (read_file_line(path, buf, sizeof(buf)) == 0) {
 			strncpy_t(tempsensorinfo->device[g_tempsensor_list_length], LINE_MAX, buf, strlen(buf));
 			tempsensorinfo->value[g_tempsensor_list_length] = temp;
-			tempsensorinfo->index[g_tempsensor_list_length] = strtoul(&(namelist[n]->d_name[strlen("thermal_zone")]), NULL, 10);
+			tempsensorinfo->index[g_tempsensor_list_length] = g_tempsensor_list_length + 1;
 			g_tempsensor_list_length++;
 		}
 		free(namelist[n]);
 	}
 	free(namelist);
+}
+
+void get_tempsensorinfo (tempsensorinfo_t *tempsensorinfo) {
+	g_tempsensor_list_length = 0;
+	memset(tempsensorinfo, 0, sizeof(tempsensorinfo_t));
+	scan_tempsensor_dir(tempsensorinfo, "/sys/class/thermal", is_thermal_zone, "temp", "type");
+	scan_tempsensor_dir(tempsensorinfo, "/sys/class/hwmon", is_hwmon, "temp1_input", "name");
 }
 
 void get_tcpinfo(tcpinfo_t *tcpinfo)

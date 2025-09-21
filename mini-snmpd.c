@@ -53,9 +53,6 @@ static int usage(int rc)
 	       "  -C, --contact STR      System contact, default: none\n"
 	       "  -d, --disks PATH       Disks to monitor, default: /\n"
 	       "  -D, --description STR  System description, default: `uname -a`\n"
-#ifdef HAVE_LIBCONFUSE
-	       "  -f, --file FILE        Configuration file. Default: " SYSCONFDIR "/%s.conf\n"
-#endif
 	       "  -h, --help             This help text\n"
 	       "  -i, --interfaces IFACE Network interfaces to monitor, default: none\n"
 	       "  -I, --listen IFACE     Network interface to listen, default: all\n"
@@ -70,9 +67,6 @@ static int usage(int rc)
 	       "  -v, --version          Show program version and exit\n"
 	       "  -V, --vendor OID       System vendor, default: none\n"
 	       "\n", g_prognm
-#ifdef HAVE_LIBCONFUSE
-	       , PACKAGE_NAME
-#endif
 		);
 	printf("Bug report address: %s\n", PACKAGE_BUGREPORT);
 #ifdef PACKAGE_URL

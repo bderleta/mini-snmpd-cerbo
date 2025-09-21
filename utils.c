@@ -49,9 +49,12 @@ int read_file_long(const char *filename, long int* dest) {
 	char buf[16] = {0};
 	int result = read_file_line(filename, buf, sizeof(buf));
 	if (result == 0) {
+		 /* https://man7.org/linux/man-pages/man3/strtol.3.html
+		  * This function does not modify errno on success. */
+		errno = 0;
 		*dest = strtol(buf, NULL, 10);
 		if (0 == *dest && errno) {
-			logit(LOG_WARNING, errno, "Failed reading long int from %s", filename);
+			logit(LOG_WARNING, errno, "Failed reading long int from %s", filename, buf);
 			return -1;
 		}
 	}

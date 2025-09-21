@@ -1072,7 +1072,6 @@ int mib_build(void)
 
 	/* LM-SENSORS-MIB */
 	if (g_tempsensor_list_length > 0) {
-		
 		for (i = 0; i < g_tempsensor_list_length; i++) {
 			if (build_int(&m_tempsensor_oid, 1, tempsensorinfo.index[i], tempsensorinfo.index[i]) == -1)
 				return -1;
@@ -1109,7 +1108,6 @@ int mib_build(void)
 	    !mib_alloc_entry(&m_demo_oid, 2, 0, BER_TYPE_INTEGER))
 		return -1;
 #endif
-
 	return 0;
 }
 
@@ -1493,9 +1491,15 @@ int mib_update(int full)
 		get_tempsensorinfo(&u.tempsensorinfo);
 		if (g_tempsensor_list_length > 0) {
 			for (i = 0; i < g_tempsensor_list_length; i++) {
-				if (update_int(&m_tempsensor_oid, 1, u.tempsensorinfo.index[i], &pos, u.tempsensorinfo.index[i]) == -1 ||
-					update_str(&m_tempsensor_oid, 2, u.tempsensorinfo.index[i], &pos, u.tempsensorinfo.device[i]) == -1 ||
-					update_gge(&m_tempsensor_oid, 3, u.tempsensorinfo.index[i], &pos, u.tempsensorinfo.value[i]) == -1)
+				if (update_int(&m_tempsensor_oid, 1, u.tempsensorinfo.index[i], &pos, u.tempsensorinfo.index[i]) == -1)
+					return -1;
+			}
+			for (i = 0; i < g_tempsensor_list_length; i++) {
+				if (update_str(&m_tempsensor_oid, 2, u.tempsensorinfo.index[i], &pos, u.tempsensorinfo.device[i]) == -1)
+					return -1;
+			}
+			for (i = 0; i < g_tempsensor_list_length; i++) {
+				if (update_gge(&m_tempsensor_oid, 3, u.tempsensorinfo.index[i], &pos, u.tempsensorinfo.value[i]) == -1)
 					return -1;
 			}
 		}
